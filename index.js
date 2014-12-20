@@ -1,9 +1,17 @@
 var Hapi = require('hapi');
 var path = require('path');
 var server = new Hapi.Server();
-server.connection({ port: 3001 });
+server.connection({
+    port: 3001,
+    routes: {
+        payload: {
+            maxBytes: 1024*1024*1024*1024
+        }
+    }
+});
 
 var plugins = [
+    require('./data'),
     require('./domain')
 ];
 

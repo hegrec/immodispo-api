@@ -1,139 +1,64 @@
-var squel = require('squel');
-var Hoek = require('hoek');
 var _ = require('lodash');
-function Base(db) {
-    var tableName = 'base';
-    var baseSchema = {
-        id: Number,
-        createdAt: Date,
-        updatedAt: Date
+
+function Base(pool) {
+
+    this.id = 0;
+    this.createdAt = new Date();
+    this.updatedAt = new Date();
+
+
+    this.find = function baseFind(params, cb) {
+        throw new Error("find not implemented");
     };
 
-    /**
-     * Custom query parameter find for domain models
-     * queryParams = {
-     *     sort: 'fieldName' OR '-fieldName' for DESC
-     *     limit: 100
-     * }
-     * @param params
-     * @param cb
-     */
-    function find(params, cb) {
-        var select = squel.select().from(tableName),
-            sortDirection = true; //ASC;
+    this.create = function baseCreate(data, cb) {
+        throw new Error("create not implemented");
+    };
 
-        if (_.isUndefined(cb)) {
-            cb = params;
-            params = {};
-        }
+    this.update = function baseUpdate(id, cb) {
+        throw new Error("update not implemented");
+    };
 
-        if (_.isString(params.sort)) {
-            if (params.sort.charAt(0) == '-') {
-                params.sort = params.sort.substr(1);
-                sortDirection = false;
-            }
+    this.remove = function baseRemove(id, cb) {
+        throw new Error("remove not implemented");
+    };
 
-            select.order(params.sort, sortDirection);
-        }
+    this.mapDataToDomain = function baseMapDataToDomain(dataModel) {
+        throw new Error("mapDataToDomain not implemented");
+    };
 
-        if (_.isNumber(params.limit)) {
-            select.limit(params.limit);
-        }
+    this.setId = function setId(id) {
+        this.id = id;
+    };
 
-        if (_.isNumber(params.start)) {
-            select.where("id > " + params.start);
-        }
+    this.getId = function getId(id) {
+        return this.id;
+    };
 
-        if (_.isObject(params.where)) {
-            _.forOwn(params.where, function(filter, columnName) {
-                if (_.isObject(filter)) {
-                    _.forOwn(filter, function (value, operation) {
-                       switch(operation) {
-                           case 'equals':
-                                if (_.isString(value)) {
-                                    value = "\'" + db.escape(value) + "\'";
-                                }
-                                select.where(columnName + '= ' + value);
-                               break;
-                           case 'between':
-                               select.where(columnName + 'BETWEEN ' + value[0] + ' and ' + value[1]);
-                               break;
-                       }
+    this.setCreatedAt = function setId(createdAt) {
+        this.createdAt = createdAt;
+    };
 
-                    });
-                }
-            });
-        }
+    this.getCreatedAt = function getCreatedAt() {
+        return this.createdAt;
+    };
 
-        var query = select.toString();
-        console.log(query);
-        db.query(query, function(err, rows, fields) {
+    this.setUpdatedAt = function setUpdatedAt(updatedAt) {
+        this.updatedAt = updatedAt;
+    };
 
-            if (err) {
-                return cb(err);
-            }
-
-            cb(null, rows);
-        });
-    }
-
-    function get(id, cb) {
-        db.query('SELECT * FROM ' + tableName + ' WHERE id=' + Number(id), function(err, rows, fields) {
-
-            if (err) {
-                return cb(err);
-            }
-
-            cb(null, rows);
-        });
-    }
-
-    /**
-     * Pass a datamap to each required column to create and persist a new domain model
-     * @param data
-     * @param cb
-     */
-    function create(data, cb) {
-
-        var insert = squel.insert()
-            .into(tableName);
-
-        _.forOwn(data, function(val, key) {
-           insert = insert.set(key, val);
-        });
-
-        console.log(insert);
-
-
-       /* db.query(insert, function(err, rows, fields) {
-
-            if (err) {
-                return cb(err);
-            }
-
-            cb(null, rows);
-        });*/
-
-        setImmediate(function() {
-           cb(null, {});
-        });
-    }
-
-    function setTableName(newTableName) {
-        tableName = newTableName;
-    }
-
-    function setSchema(modelSchema) {
-        baseSchema = Hoek.applyToDefaults(baseSchema, modelSchema);
-    }
-
+    this.getUpdatedAt = function getUpdatedAt() {
+        return this.updatedAt;
+    };
 
     return {
-        find: find,
-        get: get,
-        create: create,
-        setTableName: setTableName,
-        setSchema: setSchema
+        find: this.find,
+        create: this.create,
+        update: this.update,
+        remove: this.remove,
+        setId: this.setId,
+        setCreatedAt: this.setCreatedAt,
+        setUpdatedAt: this.setUpdatedAt
     };
 }
 

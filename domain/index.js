@@ -3,39 +3,29 @@ var mysql = require('mysql'),
 
 exports.register = function (server, options, next) {
 
-    var connection = mysql.createConnection({
+    var connectionPool = mysql.createPool({
+        connectionLimit: 100,
         host: '127.0.0.1',
         user: 'immodispo',
         password: 'devpassword',
         database: 'immodispo'
     });
 
-    connection.connect(function(err) {
-        if (err) {
-            console.error('error connecting: ' + err.stack);
-            return;
-        }
+    domainModels.region = require("./models/Region")(server);
+    domainModels.department = require("./models/Department")(server);
+    domainModels.town = require("./models/Town")(server);
+    domainModels.agency = require("./models/Agency")(server);
+    domainModels.listing = require("./models/Listing")(server);
 
-        console.log('connected as id ' + connection.threadId);
-
-
-        domainModels.region = require("./models/Region")(connection);
-        domainModels.department = require("./models/Department")(connection);
-        domainModels.town = require("./models/Town")(connection);
-        domainModels.agency = require("./models/Agency")(connection);
-        domainModels.listing = require("./models/Listing")(connection);
-        domainModels.listingImage = require("./models/ListingImage")(connection);
-
-        next();
-    });
-
-    server.decorate('reply', 'models', function() {
+    server.decorate('reply', 'domain', function() {
 
         return domainModels;
     });
+
+    next();
 };
 
 exports.register.attributes = {
-    name: 'database',
+    name: 'domainmodel',
     version: '1.0.0'
 };
