@@ -1,13 +1,30 @@
-var squel = require('squel');
 var Hoek = require('hoek');
+var util = require('./../../lib/util');
 var _ = require('lodash');
-function Base(pool) {
-    var tableName = 'base';
-    var baseSchema = {
-        id: Number,
-        createdAt: Date,
-        updatedAt: Date
-    };
+function Base(sequelize) {
+    var self = this;
+    var dataMapper = null;
+    var daoObject;
+    var findIncludes = [];
+
+
+
+    function mapDataToModel(dataModel) {
+        if (_.isUndefined(dataMapper)) {
+            throw new Error('Data model not mapped to domain');
+        }
+
+        return dataMapper(dataModel);
+    }
+
+    function setDataMapper(mappingFunction) {
+        dataMapper = mappingFunction;
+    }
+
+    function setDAO(daoObj, includes) {
+        daoObject = daoObj;
+        findIncludes = includes;
+    }
 
     /**
      * Custom query parameter find for domain models
@@ -19,88 +36,37 @@ function Base(pool) {
      * @param cb
      */
     function find(params, cb) {
-        var select = squel.select().from(tableName),
-            sortDirection = true; //ASC;
 
         if (_.isUndefined(cb)) {
             cb = params;
             params = {};
         }
 
-        select = this.buildFilterParams(params, select);
+        var filters = this.buildFilterParams(params);
+        filters.include = findIncludes;
 
-        var query = select.toString();
-        console.log(query);
-        pool.getConnection(function(err, connection) {
-            connection.query(query, function(err, rows, fields) {
-                connection.release();
-                if (err) {
-                    return cb(err);
-                }
 
-                cb(null, rows);
-            });
-        });
+        try {
+            daoObject.findAndCountAll(filters).then(function (result) {
+                var rows = result.rows,
+                    count = result.count,
+                    domainModels = [];
 
-    }
+                _.each(rows, function (dataRow) {
+                    domainModels.push(mapDataToModel(dataRow.dataValues));
+                });
 
-    function get(id, cb) {
-        pool.getConnection(function(err, connection) {
-            connection.query('SELECT * FROM ' + tableName + ' WHERE id=' + Number(id), function (err, result, fields) {
-                connection.release();
-                if (err) {
-                    return cb(err);
-                }
+                var response = new require("./../../lib/api_response");
+                response.body = domainModels;
 
-                cb(null, result[0]);
-            });
-        });
-    }
 
-    /**
-     * Pass a datamap to each required column to create and persist a new domain model
-     * @param data
-     * @param cb
-     */
-    function create(data, cb) {
-
-        var insert = squel.insert()
-            .into(tableName);
-
-        var nowMysqlTIME = new Date().toISOString().slice(0, 19).replace('T', ' ');
-        data.createdAt = nowMysqlTIME;
-        data.updatedAt = nowMysqlTIME;
-
-        _.forOwn(data, function(val, key) {
-           if (!_.isUndefined(val)) {
-               insert = insert.set(key, val);
-           }
-        });
-        var query = insert.toString();
-        console.log(query);
-        pool.getConnection(function(err, connection) {
-            connection.query(query, function (err, result) {
-                connection.release();
-                if (err) {
-                    return cb(err);
-                }
-
-                if (_.isNumber(result.insertId)) {
-                    get(result.insertId, function (err, result) {
-
-                        if (err) {
-                            return cb(err);
-                        }
-
-                        cb(null, result);
-                    });
-                } else {
-                    cb("Failed to insert data " + data.toString(), null);
-                }
-
+                response.meta.total = count;
+                cb(null, response);
 
             });
-        });
+        } catch (e) {
+            throw new Error(e);
+        }
     }
 
     function setTableName(newTableName) {
@@ -111,70 +77,59 @@ function Base(pool) {
         baseSchema = Hoek.applyToDefaults(baseSchema, modelSchema);
     }
 
-    function buildFilterParams(params, select) {
+    function buildFilterParams(params) {
+        var sequelizeWhereFilters = {};
 
         if (_.isString(params.sort)) {
             if (params.sort.charAt(0) == '-') {
                 params.sort = params.sort.substr(1);
-                sortDirection = false;
+                sequelizeWhereFilters.order = [[params.sort,'DESC']];
+            } else {
+                sequelizeWhereFilters.order = [[params.sort,'ASC']];
             }
-
-            select.order(params.sort, sortDirection);
-        } else {
-            select.order(tableName+".id");
         }
 
         if (_.isNumber(params.limit)) {
-            select.limit(params.limit);
+            sequelizeWhereFilters.limit = Math.min(500,params.limit);
         } else {
-            select.limit(50);
+            sequelizeWhereFilters.limit = 20;
         }
 
         if (_.isNumber(params.start)) {
             //subtract 1 because if they enter start 1, we don't want to offset 1
-            select.offset(params.start-1);
+            sequelizeWhereFilters.offset = params.start - 1;
         }
 
         if (_.isObject(params.where)) {
+            sequelizeWhereFilters.where = {};
             _.forOwn(params.where, function(filter, columnName) {
                 if (_.isObject(filter)) {
-                    _.forOwn(filter, function (value, operation) {
+                    sequelizeWhereFilters.where[columnName] = {};
+                        _.forOwn(filter, function (value, operation) {
                         switch(operation) {
-                            case 'equals':
-                                if (_.isString(value)) {
-                                    value = "\'" + pool.escape(value) + "\'";
-                                }
-                                select.where(columnName + '=' + value);
+                            case 'eq':
+                                sequelizeWhereFilters.where[columnName] = value;
                                 break;
-                            case 'between':
-                                select.where(columnName + 'BETWEEN ' + value[0] + ' and ' + value[1]);
-                                break;
-
                             case 'gt':
-                                select.where(columnName + '>' + value);
+                                sequelizeWhereFilters.where[columnName].gt = value;
                                 break;
-
                             case 'lt':
-                                select.where(columnName + '<' + value);
+                                sequelizeWhereFilters.where[columnName].lt = value;
                                 break;
-
-
                         }
-
                     });
                 }
             });
         }
-
-        return select;
+        return sequelizeWhereFilters;
     }
-
 
     return {
         find: find,
-        create: create,
         setTableName: setTableName,
         setSchema: setSchema,
+        setDataMapper: setDataMapper,
+        setDAO: setDAO,
         buildFilterParams: buildFilterParams
     };
 }

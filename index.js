@@ -11,8 +11,7 @@ server.connection({
 });
 
 var plugins = [
-    require('./data'),
-    require('./domain')
+    require('./data')
 ];
 
 require('./routes')(server);
@@ -21,6 +20,13 @@ server.register(plugins, function (err) {
     if (err) {
         console.error('Failed to load a plugin:', err);
     }
+});
+
+server.ext('onRequest', function(request, reply) {
+
+
+    console.log(request.url.href);
+    reply.continue();
 });
 
 server.start(function () {

@@ -14,7 +14,10 @@
     "hoek": "^2.10.0",
     "joi": "^5.0.2",
     "lodash": "^2.4.1",
-    "mysql": "^2.5.3",
-    "squel": "^3.10.0"
+    "mysql": "^2.5.4",
+    "sequelize": "^2.0.0-rc4"
+  },
+  "devDependencies": {
+    "memwatch": "^0.2.2"
   }
 }

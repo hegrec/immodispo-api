@@ -1,9 +1,9 @@
-var path = require('path'),
-    Joi = require('joi'),
-    async = require('async'),
-    imageSaver = require('../lib/imagesaver/LocalImageSaver'),
+var Joi = require('joi'),
     util = require('../lib/util'),
-    env = require('../env'),
+    DomainAgency = require('./../domain/Agency'),
+    DomainListing = require('./../domain/Listing'),
+    DomainListingImage = require('./../domain/ListingImage'),
+    DomainListingDetail = require('./../domain/ListingDetail'),
     _ = require('lodash');
 
 module.exports = function(server) {
@@ -25,7 +25,7 @@ module.exports = function(server) {
         path: '/regions',
         handler: function (request, reply) {
 
-            reply.domain().region.find(function(err, regions) {
+            server.data().region.find(function(err, regions) {
 
                 if (err) throw err;
 
@@ -38,16 +38,15 @@ module.exports = function(server) {
         method: 'GET',
         path: '/regions/{id}',
         handler: function (request, reply) {
-
             var params = {
                 where: {
                     id: {
-                        equals: request.params.id
+                        eq: request.params.id
                     }
                 }
             };
 
-            reply.domain().region.find(params, function(err, region) {
+            server.data().region.find(params, function(err, region) {
 
                 if (err) throw err;
 
@@ -68,16 +67,9 @@ module.exports = function(server) {
         path: '/departments',
         handler: function (request, reply) {
 
-            reply.domain().department.find(function(err, departments) {
+            server.data().department.find(function(err, departments) {
 
                 if (err) throw err;
-
-                if (!request.query.includeKml) {
-                    _.each(departments, function(department) {
-                        department.clearKML();
-                    })
-                }
-
 
                 reply(departments);
             });
@@ -91,12 +83,12 @@ module.exports = function(server) {
             var params = {
                 where: {
                     id: {
-                        equals: request.params.id
+                        eq: request.params.id
                     }
                 }
             };
 
-            reply.domain().department.find(params, function(err, department) {
+            server.data().department.find(params, function(err, department) {
 
                 if (err) throw err;
 
@@ -116,25 +108,11 @@ module.exports = function(server) {
         method: 'GET',
         path: '/towns',
         handler: function (request, reply) {
-            var queryParams = {};
+            var filter = util.queryToFilter(request.query);
 
-            if (request.query.sort) {
-                queryParams.sort = request.query.sort;
-            }
-
-            if (request.query.limit) {
-                queryParams.limit = Number(request.query.limit);
-            }
-
-            reply.domain().town.find(queryParams, function(err, towns) {
+            server.data().town.find(filter, function(err, towns) {
 
                 if (err) throw err;
-
-                if (!request.query.includeKml) {
-                    _.each(towns, function(town) {
-                        town.clearKML();
-                    })
-                }
 
                 reply(towns);
             });
@@ -146,7 +124,15 @@ module.exports = function(server) {
         path: '/towns/{id}',
         handler: function (request, reply) {
 
-            reply.domain().town.get(request.params.id, function(err, town) {
+            var params = {
+                where: {
+                    id: {
+                        eq: Number(request.params.id)
+                    }
+                }
+            };
+
+            server.data().town.find(params, function(err, town) {
 
                 if (err) throw err;
 
@@ -159,8 +145,30 @@ module.exports = function(server) {
         method: 'GET',
         path: '/agencies',
         handler: function (request, reply) {
+            var filter = util.queryToFilter(request.query);
 
-            reply.domain().agency.find(function(err, agency) {
+            server.data().agency.find(filter, function(err, agency) {
+
+                if (err) throw err;
+
+                reply(agency);
+            });
+        }
+    });
+
+    server.route({
+        method: 'GET',
+        path: '/agencies/{id}',
+        handler: function (request, reply) {
+            var params = {
+                where: {
+                    id: {
+                        eq: Number(request.params.id)
+                    }
+                }
+            };
+
+            server.data().agency.find(params, function(err, agency) {
 
                 if (err) throw err;
 
@@ -173,42 +181,39 @@ module.exports = function(server) {
         method: 'POST',
         path: '/agencies',
         handler: function (request, reply) {
-            var models = reply.models(),
-                imageInformation = request.payload.image,
-                imageData = new Buffer(imageInformation.buffer, 'base64'),
-                newAgency = {
-                    name: request.payload.name,
-                    address_1: request.payload.address_1,
-                    address_2: request.payload.address_2,
-                    telephone: request.payload.telephone,
-                    email: request.payload.email,
-                    website: request.payload.website,
-                    TownId: request.payload.TownId,
-
-                    image: util.generateFileName()+imageInformation.extension
-                },
-                imageFilePath = env.AGENCY_DIRECTORY + newAgency.image;
-
-
-
-                imageSaver.saveImage(imageData, imageFilePath, function(err, saved) {
-
-                    if (err) {
-                        throw err;
+            var newAgency = new DomainAgency(),
+                params = {
+                where: {
+                    id: {
+                        eq: Number(request.payload.TownId)
                     }
+                }
+            };
 
-                    if (saved) {
-                        models.agency.create(newAgency, function (err, savedAgency) {
+            newAgency.name = request.payload.name;
+            newAgency.address_1 = request.payload.address_1;
+            newAgency.address_2 = request.payload.address_2;
+            newAgency.telephone = request.payload.telephone;
+            newAgency.email = request.payload.email;
+            newAgency.website = request.payload.website;
 
-                            if (err) throw err;
-                            console.log(savedAgency);
-                            savedAgency.image = '/agencyImages/' + savedAgency.image;
+            var buffer;
+            if (request.payload.image) {
+                newAgency.image = util.generateFileName() + request.payload.image.extension;
+                buffer = request.payload.image.buffer;
+            }
 
+            server.data().town.find(params, function(err, town) {
 
-                            reply(savedAgency);
-                        });
-                    }
+                if (town.body.length < 1) throw new Error('Town was not found');
+                newAgency.town = town.body[0];
+
+                server.data().agency.create(newAgency, buffer, function(err, savedAgency) {
+                    if (err) throw err;
+
+                    reply(savedAgency);
                 });
+            });
         },
         config: {
             validate: {
@@ -219,7 +224,7 @@ module.exports = function(server) {
                     telephone: Joi.string(),
                     email: Joi.string(),
                     website: Joi.string(),
-                    TownId: Joi.number(),
+                    TownId: Joi.number().required(),
                     image: Joi.object()
                 }
             }
@@ -231,7 +236,9 @@ module.exports = function(server) {
         path: '/listings',
         handler: function (request, reply) {
 
-            reply.domain().listing.find(function(err, town) {
+            var filter = util.queryToFilter(request.query);
+
+            server.data().listing.find(filter, function(err, town) {
 
                 if (err) throw err;
 
@@ -241,25 +248,23 @@ module.exports = function(server) {
     });
 
     server.route({
-        method: 'POST',
-        path: '/listings/filter',
+        method: 'GET',
+        path: '/listings/{id}',
         handler: function (request, reply) {
+            var params = {
+                where: {
+                    id: {
+                        eq: Number(request.params.id)
+                    }
+                }
+            };
 
-            var filter = request.payload.filter;
-
-            reply.domain().listing.find(filter, function(err, town) {
+            server.data().listing.find(params, function(err, listing) {
 
                 if (err) throw err;
 
-                reply(town);
+                reply(listing);
             });
-        },
-        config: {
-            validate: {
-                payload: {
-                    filter: Joi.object().required()
-                }
-            }
         }
     });
 
@@ -267,87 +272,61 @@ module.exports = function(server) {
         method: 'POST',
         path: '/listings',
         handler: function (request, reply) {
-            var models = reply.domain(),
-                newListing = {
-                    price: request.payload.price,
-                    description: request.payload.description,
-                    num_rooms: request.payload.num_rooms,
-                    num_bathrooms: request.payload.num_bathrooms,
-                    num_bedrooms: request.payload.num_bedrooms,
-                    num_toilets: request.payload.num_toilets,
-                    num_floors: request.payload.num_floors,
-                    num_parking: request.payload.num_parking,
-                    construction_type: request.payload.construction_type,
-                    listing_url: request.payload.listing_url,
-                    latitude: request.payload.latitude,
-                    longitude: request.payload.longitude,
-                    energy_rating: request.payload.energy_rating,
-                    carbon_rating: request.payload.carbon_rating,
-                    basement_size: request.payload.basement_size,
-                    attic_size: request.payload.attic_size,
-                    land_size: request.payload.land_size,
-                    interior_size: request.payload.interior_size,
-                    total_size: request.payload.total_size,
-                    has_garden: request.payload.has_garden,
-                    has_pool: request.payload.has_pool,
-                    has_kitchen: request.payload.has_kitchen,
-                    year_built: request.payload.year_built,
-                    is_rental: request.payload.is_rental,
-                    in_subdivision: request.payload.in_subdivision,
-                    feature_score: 0,
-                    AgencyId: request.payload.AgencyId,
-                    TownId: request.payload.TownId,
-                    views: 0
+            var models = server.data(),
+                newListing = new DomainListing(),
+                agencyParams = {
+                    where: {
+                        id: {
+                            eq: Number(request.payload.AgencyId)
+                        }
+                    }
+                },
+                townParams = {
+                    where: {
+                        id: {
+                            eq: Number(request.payload.TownId)
+                        }
+                    }
                 };
 
-            console.log("creating listing");
-            //first create the listing
-            models.listing.create(newListing, function(err, savedListing) {
+            newListing.price = request.payload.price;
+            newListing.description = request.payload.description;
+            newListing.num_rooms = request.payload.num_rooms;
+            newListing.num_bathrooms = request.payload.num_bathrooms;
+            newListing.num_bedrooms = request.payload.num_bedrooms;
+            newListing.construction_type = request.payload.construction_type;
+            newListing.listing_url = request.payload.listing_url;
+            newListing.latitude = request.payload.latitude;
+            newListing.longitude = request.payload.longitude;
+            newListing.land_size = request.payload.land_size;
+            newListing.interior_size = request.payload.interior_size;
+            newListing.total_size = request.payload.total_size;
+            newListing.year_built = request.payload.year_built;
+            newListing.is_rental = request.payload.is_rental;
+            newListing.feature_score = 0;
+            newListing.views = 0;
 
-                if (err) throw err;
+            server.data().town.find(townParams, function(err, town) {
 
-                savedListing.images = [];
+                if (town.body.length < 1) throw new Error('Town was not found');
 
-                //now create the listing images
-                var imageBufferFunctionMapper = [];
-                _.each(request.payload.images, function(imageData) {
-                    var buffer = new Buffer(imageData.buffer, 'base64');
-                    var extension = imageData.extension;
+                newListing.town = town.body[0];
 
-                    var func = function saveListingImage(cb) {
+                server.data().agency.find(agencyParams, function(err, agency) {
 
-                        var listingImage = {
-                                filename: util.generateFileName()+extension,
-                                ListingId: savedListing.id
-                            },
-                            imageFilePath = env.LISTING_DIRECTORY + listingImage.filename;
+                    if (agency.body.length < 1) throw new Error('Agency was not found');
 
-                        imageSaver.saveImage(buffer, imageFilePath, function(err, result) {
+                    newListing.agency = agency.body[0];
 
-                            if (err) {
-                                return cb(err);
-                            }
-                            //console.log(listingImage);
-                            models.listingImage.create(listingImage, function(err, savedListingImage) {
-                                savedListingImage.imageURL = '/listingImages/'+savedListingImage.filename;
+                    server.data().listing.create(newListing, function(err, savedListing) {
+                        if (err) throw err;
 
-                                cb(null, savedListingImage);
-                            });
-                        });
-                    };
-                    imageBufferFunctionMapper.push(func);
-                });
-
-                async.parallel(imageBufferFunctionMapper, function(err, savedImages) {
-
-                    if (err) {
-                        reply("error while saving listing");
-                    } else {
-                        savedListing.images = savedImages;
                         reply(savedListing);
-                    }
+                    });
                 });
             });
+
+
         },
         config: {
             validate: {
@@ -358,29 +337,100 @@ module.exports = function(server) {
                     construction_type: Joi.string().required(),
                     listing_url: Joi.string().required(),
                     total_size: Joi.number().required(),
-                    images: Joi.array().min(5).required(),
-
                     description: Joi.string().required(),
                     num_rooms: Joi.number().required(),
                     num_bathrooms: Joi.number().required(),
                     num_bedrooms: Joi.number().required(),
-                    num_toilets: Joi.number().required(),
-                    num_floors: Joi.number().required(),
-                    num_parking: Joi.number().required(),
-                    latitude: Joi.number().required(),
-                    longitude: Joi.number().required(),
-                    energy_rating: Joi.number().required(),
-                    carbon_rating: Joi.number().required(),
-                    basement_size: Joi.number().required(),
-                    attic_size: Joi.number().required(),
-                    land_size: Joi.number().required(),
-                    interior_size: Joi.number().required(),
-                    has_garden: Joi.number().required(),
-                    has_pool: Joi.number().required(),
-                    has_kitchen: Joi.number().required(),
-                    year_built: Joi.number().required(),
-                    is_rental: Joi.number().required(),
-                    in_subdivision: Joi.number().required()
+                    latitude: Joi.number(),
+                    longitude: Joi.number(),
+                    land_size: Joi.number(),
+                    interior_size: Joi.number(),
+                    year_built: Joi.number(),
+                    is_rental: Joi.boolean().required()
+                }
+            }
+        }
+    });
+
+    server.route({
+        method: 'POST',
+        path: '/listings/{id}/images',
+        handler: function (request, reply) {
+            var newListingImage = new DomainListingImage(),
+                listingParams = {
+                    where: {
+                        id: {
+                            eq: Number(request.params.id)
+                        }
+                    }
+                };
+
+            newListingImage.filename = util.generateFileName()+request.payload.extension;
+            newListingImage.buffer = request.payload.buffer;
+
+            server.data().listing.find(listingParams, function(err, listing) {
+
+                if (listing.body.length < 1) throw new Error('Listing was not found');
+
+                newListingImage.listing = listing.body[0];
+                //console.log(listing[0]);
+
+                server.data().listingImage.create(newListingImage, function(err, savedListingImage) {
+                    if (err) throw err;
+
+                    reply(savedListingImage);
+                });
+            });
+
+
+        },
+        config: {
+            validate: {
+                payload: {
+                    extension: Joi.string().required(),
+                    buffer: Joi.string().required(),
+                }
+            }
+        }
+    });
+
+    server.route({
+        method: 'POST',
+        path: '/listings/{id}/details',
+        handler: function (request, reply) {
+            var newListingDetail = new DomainListingDetail(),
+                listingParams = {
+                    where: {
+                        id: {
+                            eq: Number(request.params.id)
+                        }
+                    }
+                };
+
+            newListingDetail.key = request.payload.key;
+            newListingDetail.value = request.payload.value;
+
+            server.data().listing.find(listingParams, function(err, listing) {
+
+                if (listing.body.length < 1) throw new Error('Listing was not found');
+
+                newListingDetail.listing = listing.body[0];
+                //console.log(listing[0]);
+
+                server.data().listingDetail.create(newListingDetail, function(err, savedListingDetail) {
+                    if (err) throw err;
+
+                    reply(savedListingDetail);
+                });
+            });
+
+
+        },
+        config: {
+            validate: {
+                payload: {
+                    key: Joi.string().required(),
+                    value: Joi.string().required()
                 }
             }
         }
