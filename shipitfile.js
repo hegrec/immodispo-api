@@ -20,11 +20,7 @@ module.exports = function (shipit) {
     });
 
     shipit.on('published', function() {
-        shipit.remote('cd /opt/immodispo-api/current && npm install').then(function(res) {
-            shipit.log(res);
-            shipit.remote('cp /home/deploy/env/immodispo-api/env.js /opt/immodispo-api/current').then(function(res) {
-                shipit.log(res);
-            });
-        });
+        shipit.remote('cd /opt/immodispo-api/current && npm install')
+        shipit.remote('cp /home/deploy/env/immodispo-api/env.js /opt/immodispo-api/current')
     })
 };

@@ -17,7 +17,7 @@ module.exports = function(server) {
             auth: 'simple',
             handler: function (request, reply) {
                 var indexResponse = {
-                    body: "Welcome to the Immodispo API. Please see the documentation at http://mealtrap.com/docs/api"
+                    body: "Welcome to the Immodispo API. Please see the documentation at http://coinerd.com/docs/api"
                 };
 
                 reply(indexResponse);
