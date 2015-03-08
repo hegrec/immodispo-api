@@ -39,9 +39,7 @@ function Agency(sequelize) {
         }
     );
 
-    AgencyDAO.belongsTo(sequelize.models.Town);
-
-    agency.setDAO(AgencyDAO, [sequelize.models.Town]);
+    agency.setDAO(AgencyDAO, ['Town']);
 
     var agencyDataMapper = function mapAgencyDataModel(agencyDataModel) {
         var domainAgency = new DomainAgency();
@@ -58,15 +56,17 @@ function Agency(sequelize) {
         domainAgency.email = agencyDataModel.email;
         domainAgency.website = agencyDataModel.website;
 
-        domainAgency.town = new DomainTown();
-        domainAgency.town.id = agencyDataModel.Town.dataValues.id;
-        domainAgency.town.name = agencyDataModel.Town.dataValues.name;
-        domainAgency.town.code = agencyDataModel.Town.dataValues.code;
-        domainAgency.town.kml = agencyDataModel.Town.dataValues.kml;
-        domainAgency.town.surface_area = agencyDataModel.Town.dataValues.surface_area;
-        domainAgency.town.population = agencyDataModel.Town.dataValues.population;
-        domainAgency.town.latitude = agencyDataModel.Town.dataValues.latitude;
-        domainAgency.town.longitude = agencyDataModel.Town.dataValues.longitude;
+        if (agencyDataModel.Town) {
+            domainAgency.town = new DomainTown();
+            domainAgency.town.id = agencyDataModel.Town.dataValues.id;
+            domainAgency.town.name = agencyDataModel.Town.dataValues.name;
+            domainAgency.town.code = agencyDataModel.Town.dataValues.code;
+            domainAgency.town.kml = agencyDataModel.Town.dataValues.kml;
+            domainAgency.town.surface_area = agencyDataModel.Town.dataValues.surface_area;
+            domainAgency.town.population = agencyDataModel.Town.dataValues.population;
+            domainAgency.town.latitude = agencyDataModel.Town.dataValues.latitude;
+            domainAgency.town.longitude = agencyDataModel.Town.dataValues.longitude;
+        }
 
         return domainAgency;
     };
@@ -147,7 +147,13 @@ function Agency(sequelize) {
         }
     };
 
+    agency.initialize = function() {
+        AgencyDAO.belongsTo(sequelize.models.Town);
+    };
+
+
     return agency;
 }
+
 
 module.exports = Agency;

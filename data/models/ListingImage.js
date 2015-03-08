@@ -16,6 +16,15 @@ function ListingImage(sequelize) {
         }
     });
 
+    ListingImageDAO.hook('afterDestroy', function(listingImage, options, fn) {
+        var imagePath = env.LISTING_DIRECTORY + listingImage.filename;
+        console.log('destroying ' + imagePath);
+        imageSaver.deleteImage(imagePath, function(err, status) {
+            fn(null, true);
+        });
+    });
+
+
     listingImage.setDAO(ListingImageDAO);
 
     var listingDataMapper = function mapListingDataModel(listingDataModel) {

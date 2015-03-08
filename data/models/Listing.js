@@ -6,8 +6,48 @@ var Base = require('./Base'),
     DomainListingDetail = require('./../../domain/ListingDetail'),
     DomainAgency = require('./../../domain/Agency'),
     DomainTown = require('./../../domain/Town'),
+    util = require('./../../lib/util');
     imageSaver = require('./../../lib/imagesaver/LocalImageSaver'),
     env = require('./../../env');
+
+
+
+var computeFeatureScore = function computeFeatureScore(listing) {
+    var score = 0;
+
+    if (listing.num_rooms) {
+        score += 1;
+    }
+
+    if (listing.Agency.email) {
+        score += 5;
+    }
+
+    if (listing.Agency.telephone) {
+        score += 5;
+    }
+
+    if (listing.num_bathrooms) {
+        score += 1;
+    }
+
+    if (listing.num_bedrooms) {
+        score += 1;
+    }
+
+    if (listing.year_built) {
+        score += 1;
+
+        if (listing.year_built > 1970) {
+            score += 5;
+        }
+    }
+
+    score += Math.floor(listing.ListingImages.length / 2);
+    score += Math.floor(listing.ListingDetails.length / 2);
+
+    return score;
+};
 
 function Listing(sequelize) {
     var listing = {};
@@ -79,15 +119,24 @@ function Listing(sequelize) {
         }
     );
 
-    ListingDAO.belongsTo(sequelize.models.Agency);
-    ListingDAO.belongsTo(sequelize.models.Town);
-    ListingDAO.hasMany(sequelize.models.ListingImage);
-    ListingDAO.hasMany(sequelize.models.ListingDetail);
 
-    listing.setDAO(ListingDAO, [sequelize.models.ListingDetail, sequelize.models.ListingImage, sequelize.models.Agency, sequelize.models.Town]);
+
+    listing.initialize = function() {
+        ListingDAO.belongsTo(sequelize.models.Agency);
+        ListingDAO.belongsTo(sequelize.models.Town);
+        ListingDAO.hasMany(sequelize.models.ListingImage, {
+            onDelete: 'cascade',
+            hooks: true
+        });
+        ListingDAO.hasMany(sequelize.models.ListingDetail);
+    };
+
+    listing.setDAO(ListingDAO, ['Agency', 'Town', 'ListingImage', 'ListingDetail']);
 
     var listingDataMapper = function mapListingDataModel(listingDataModel) {
-        var domainListing = new DomainListing();
+        var domainListing = new DomainListing(),
+            images = [];
+
         domainListing.id = listingDataModel.id;
         domainListing.createdAt = listingDataModel.createdAt;
         domainListing.updatedAt = listingDataModel.updatedAt;
@@ -107,6 +156,7 @@ function Listing(sequelize) {
         domainListing.is_rental = listingDataModel.is_rental;
         domainListing.feature_score = listingDataModel.feature_score;
         domainListing.views = listingDataModel.views;
+
         if (typeof listingDataModel.Town !== 'undefined') {
             domainListing.town = new DomainTown();
             domainListing.town.id = listingDataModel.Town.dataValues.id;
@@ -120,6 +170,7 @@ function Listing(sequelize) {
         } else {
             domainListing.town = listingDataModel.TownId;
         }
+
         if (typeof listingDataModel.Agency !== 'undefined') {
             domainListing.agency = new DomainAgency();
             domainListing.agency.id = listingDataModel.Agency.dataValues.id;
@@ -133,20 +184,28 @@ function Listing(sequelize) {
         } else {
             domainListing.agency = listingDataModel.AgencyId;
         }
-        var images = [];
-        _.each(listingDataModel.ListingImages, function (image) {
-            var domainImage = {
-                standard_url: '/listingImages/' + image.dataValues.filename
-            };
-            images.push(domainImage);
-        });
+
+
+        if (_.isArray(listingDataModel.ListingImages)) {
+            _.each(listingDataModel.ListingImages, function (image) {
+                var domainImage = {
+                    standard_url: '/listingImages/' + image.dataValues.filename
+                };
+                images.push(domainImage);
+            });
+        }
 
         domainListing.images = images;
 
-        var details = {};
-        _.each(listingDataModel.ListingDetails, function (detail) {
-            details[detail.dataValues.key] = detail.dataValues.value;
-        });
+        var details = [];
+        if (_.isArray(listingDataModel.ListingDetails)) {
+            _.each(listingDataModel.ListingDetails, function (detail) {
+                details.push({
+                    key: detail.dataValues.key,
+                    value: detail.dataValues.value
+                });
+            });
+        }
 
         domainListing.details = details;
 
@@ -183,7 +242,45 @@ function Listing(sequelize) {
         });
     };
 
+    listing.update = function listingUpdate(id, listingData, cb) {
+
+
+        ListingDAO.find({
+            where: {
+                id: id
+            },
+            include: [sequelize.models.ListingImage, sequelize.models.ListingDetail, sequelize.models.Agency]
+        }).then(function(listing) {
+
+            _.forOwn(listingData, function(value, key) {
+
+                if (!_.isUndefined(value)) {
+                    listing[key] = value;
+                }
+            });
+
+            listing.feature_score = computeFeatureScore(listing);
+
+            listing.save().complete(function (err, savedListing) {
+                if (err) throw err;
+                cb(null, savedListing);
+            });
+        });
+    };
+
+    listing.delete = function listingDelete(id, cb) {
+
+        ListingDAO.find(id).then(function(listing) {
+
+            listing.destroy().then(function() {
+                    cb(null, true);
+                }
+            )
+        });
+    };
+
     return listing;
 }
+
 
 module.exports = Listing;

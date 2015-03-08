@@ -1,6 +1,8 @@
 var Base = require('./Base'),
+    _ = require('lodash'),
     Sequelize = require('sequelize'),
-    DomainDepartment = require('./../../domain/Department');
+    DomainDepartment = require('./../../domain/Department'),
+    DomainTown = require('./../../domain/Town');
 
 function Department(sequelize) {
     var department = {};
@@ -32,9 +34,9 @@ function Department(sequelize) {
         }
     );
 
-    DepartmentDAO.hasOne(sequelize.models.Region);
 
-    department.setDAO(DepartmentDAO);
+
+    department.setDAO(DepartmentDAO, ['Region', 'Town']);
 
     department.setDataMapper(function mapDepartmentDataModel(departmentDataModel) {
         var domainDepartment = new DomainDepartment();
@@ -48,8 +50,30 @@ function Department(sequelize) {
         domainDepartment.latitude = departmentDataModel.latitude;
         domainDepartment.longitude = departmentDataModel.longitude;
 
+        if (departmentDataModel.Towns) {
+            domainDepartment.towns = [];
+            _.each(departmentDataModel.Towns, function(townModel) {
+                var town = new DomainTown();
+                town.id = townModel.dataValues.id;
+                town.name = townModel.dataValues.name;
+                town.code = townModel.dataValues.code;
+                town.kml = townModel.dataValues.kml;
+                town.surface_area = townModel.dataValues.surface_area;
+                town.population = townModel.dataValues.population;
+                town.latitude = townModel.dataValues.latitude;
+                town.longitude = townModel.dataValues.longitude;
+                domainDepartment.towns.push(town);
+            });
+        }
+
+
         return domainDepartment;
     });
+
+    department.initialize = function() {
+        DepartmentDAO.hasMany(sequelize.models.Town);
+        DepartmentDAO.belongsTo(sequelize.models.Region);
+    };
 
     return department;
 }

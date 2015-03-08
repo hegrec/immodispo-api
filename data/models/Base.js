@@ -5,7 +5,7 @@ function Base(sequelize) {
     var self = this;
     var dataMapper = null;
     var daoObject;
-    var findIncludes = [];
+    var availableIncludes = [];
 
 
 
@@ -23,7 +23,7 @@ function Base(sequelize) {
 
     function setDAO(daoObj, includes) {
         daoObject = daoObj;
-        findIncludes = includes;
+        availableIncludes = includes;
     }
 
     /**
@@ -43,7 +43,17 @@ function Base(sequelize) {
         }
 
         var filters = this.buildFilterParams(params);
-        filters.include = findIncludes;
+
+        var daoIncludes = [];
+        if (filters.include) {
+            _.each(filters.include, function(associateModel) {
+                if (_.includes(availableIncludes, associateModel)) {
+                    daoIncludes.push(sequelize.models[associateModel]);
+                }
+            });
+        }
+
+        filters.include = daoIncludes;
 
 
         try {
@@ -78,50 +88,57 @@ function Base(sequelize) {
     }
 
     function buildFilterParams(params) {
-        var sequelizeWhereFilters = {};
+        var ormFilter = {};
 
         if (_.isString(params.sort)) {
             if (params.sort.charAt(0) == '-') {
                 params.sort = params.sort.substr(1);
-                sequelizeWhereFilters.order = [[params.sort,'DESC']];
+                ormFilter.order = [[params.sort,'DESC']];
             } else {
-                sequelizeWhereFilters.order = [[params.sort,'ASC']];
+                ormFilter.order = [[params.sort,'ASC']];
             }
         }
 
+        if (_.isArray(params.include)) {
+            ormFilter.include = params.include;
+        }
+
         if (_.isNumber(params.limit)) {
-            sequelizeWhereFilters.limit = Math.min(500,params.limit);
+            ormFilter.limit = Math.min(500,params.limit);
         } else {
-            sequelizeWhereFilters.limit = 20;
+            ormFilter.limit = 20;
         }
 
         if (_.isNumber(params.start)) {
             //subtract 1 because if they enter start 1, we don't want to offset 1
-            sequelizeWhereFilters.offset = params.start - 1;
+            ormFilter.offset = params.start - 1;
         }
 
         if (_.isObject(params.where)) {
-            sequelizeWhereFilters.where = {};
+            ormFilter.where = {};
             _.forOwn(params.where, function(filter, columnName) {
                 if (_.isObject(filter)) {
-                    sequelizeWhereFilters.where[columnName] = {};
+                    ormFilter.where[columnName] = {};
                         _.forOwn(filter, function (value, operation) {
                         switch(operation) {
                             case 'eq':
-                                sequelizeWhereFilters.where[columnName] = value;
+                                ormFilter.where[columnName] = value;
                                 break;
                             case 'gt':
-                                sequelizeWhereFilters.where[columnName].gt = value;
+                                ormFilter.where[columnName].gt = value;
                                 break;
                             case 'lt':
-                                sequelizeWhereFilters.where[columnName].lt = value;
+                                ormFilter.where[columnName].lt = value;
+                                break;
+                            case 'startswith':
+                                ormFilter.where[columnName].like = value + '%';
                                 break;
                         }
                     });
                 }
             });
         }
-        return sequelizeWhereFilters;
+        return ormFilter;
     }
 
     return {

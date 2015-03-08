@@ -1,4 +1,5 @@
-var mysql = require('mysql'),
+var _ = require('lodash'),
+    mysql = require('mysql'),
     dataModels = {},
     Sequelize = require('sequelize');
 
@@ -9,7 +10,7 @@ exports.register = function (server, options, next) {
         host: '127.0.0.1',
         port: 3306,
         logging: function(str) {
-
+            //console.log(str);
         }
     });
 
@@ -18,13 +19,21 @@ exports.register = function (server, options, next) {
            throw new Error(err);
        } else {
 
-           dataModels.region = require("./models/Region")(sequelize);
-           dataModels.department = require("./models/Department")(sequelize);
+
+
            dataModels.town = require("./models/Town")(sequelize);
+           dataModels.department = require("./models/Department")(sequelize);
+           dataModels.region = require("./models/Region")(sequelize);
            dataModels.agency = require("./models/Agency")(sequelize);
            dataModels.listingImage = require("./models/ListingImage")(sequelize);
            dataModels.listingDetail = require("./models/ListingDetail")(sequelize);
            dataModels.listing = require("./models/Listing")(sequelize);
+
+           _.forOwn(dataModels, function(model, ndx) {
+               if (model.initialize) {
+                   model.initialize();
+               }
+           });
 
            next();
        }

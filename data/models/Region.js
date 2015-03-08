@@ -30,6 +30,13 @@ function Region(sequelize) {
         }
     );
 
+
+
+    region.initialize = function() {
+        RegionDAO.hasMany(sequelize.models.Department);
+        RegionDAO.hasMany(sequelize.models.Town);
+    };
+
     region.setDAO(RegionDAO);
     region.setDataMapper(function mapToDomain(regionDataModel) {
         var domainRegion = new DomainRegion();
