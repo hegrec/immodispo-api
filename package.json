@@ -24,8 +24,6 @@
     "url": "https://github.com/hegrec/immodispo-api.git"
   },
   "devDependencies": {
-    "grunt": "^0.4.5",
-    "grunt-shipit": "^1.0.0",
     "shipit-deploy": "^1.1.1"
   }
 }
