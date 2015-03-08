@@ -3,11 +3,12 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "private": true,
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
-  "license": "ISC",
+  "license": "Proprietary",
   "dependencies": {
     "async": "^0.9.0",
     "hapi": "^8.0.0",
@@ -18,6 +19,13 @@
     "mysql": "^2.5.4",
     "sequelize": "^2.0.2"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hegrec/immodispo-api.git"
+  },
   "devDependencies": {
+    "grunt": "^0.4.5",
+    "grunt-shipit": "^1.0.0",
+    "shipit-deploy": "^1.1.1"
   }
 }

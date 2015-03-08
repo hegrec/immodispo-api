@@ -1,25 +1,29 @@
 var _ = require('lodash'),
+    env = require('../env'),
     mysql = require('mysql'),
     dataModels = {},
     Sequelize = require('sequelize');
 
 
 exports.register = function (server, options, next) {
-    sequelize = new Sequelize('immodispo','immodispo','devpassword', {
-        dialect: 'mysql',
-        host: '127.0.0.1',
-        port: 3306,
-        logging: function(str) {
-            //console.log(str);
+    sequelize = new Sequelize(
+        env.mysql.database,
+        env.mysql.username,
+        env.mysql.password,
+        {
+            dialect: 'mysql',
+            host: env.mysql.host,
+            port: env.mysql.port,
+            logging: function(str) {
+                //console.log(str);
+            }
         }
-    });
+    );
 
     sequelize.authenticate().complete(function(err) {
        if (err) {
            throw new Error(err);
        } else {
-
-
 
            dataModels.town = require("./models/Town")(sequelize);
            dataModels.department = require("./models/Department")(sequelize);

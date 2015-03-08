@@ -1,30 +1,10 @@
 var Hapi = require('hapi'),
     server = new Hapi.Server(),
-    env = require('./env'),
-    users = {
-        web: {
-            username: 'web',
-            password: env.WEB_SECRET,
-            name: 'Web Application',
-            id: 1
-        },
-        crawl: {
-            username: 'crawl',
-            password: env.CRAWL_SECRET,
-            name: 'Crawl Application',
-            id: 1
-        },
-        admin: {
-            username: 'crawl',
-            password: env.CRAWL_SECRET,
-            name: 'Crawl Application',
-            id: 1
-        }
-    };
+    env = require('./env');
 
 server.connection({
-    port: 3001,
-    //host: '127.0.0.1',
+    port: env.port,
+    host: env.host,
     routes: {
         payload: {
             maxBytes: 1024*1024*1024*1024
@@ -34,14 +14,14 @@ server.connection({
 
 var validate = function (username, password, callback) {
 
-    var user = users[username],
+    var user = env.users[username],
         isValid = false;
     if (!user) {
         return callback(null, false);
     }
 
 
-    if (password === 'qgvh567^') {
+    if (password === user.password) {
         isValid = true;
     }
 

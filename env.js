@@ -1,6 +1,33 @@
 module.exports = {
     LISTING_DIRECTORY: '/opt/immodispo/listingImages/',
     AGENCY_DIRECTORY: '/opt/immodispo/agencyImages/',
-    WEB_SECRET: '6b78r4b46835bc7346fvbx3467fx34',
-    CRAWL_SECRET: '87n6f9d8s7vndfs8658bv8dfs59vsdvs'
+    port: 3001,
+    host: '0.0.0.0',
+    mysql: {
+        database: 'immodispo',
+        username: 'immodispo',
+        password: 'devpassword',
+        host: '127.0.0.1',
+        port: 3306
+    },
+    users: {
+        web: {
+            username: 'web',
+            password: 'web',
+            name: 'Web Application',
+            id: 1
+        },
+        crawl: {
+            username: 'crawl',
+            password: 'crawl',
+            name: 'Crawl Application',
+            id: 1
+        },
+        admin: {
+            username: 'admin',
+            password: 'admin',
+            name: 'Crawl Application',
+            id: 1
+        }
+    }
 };
