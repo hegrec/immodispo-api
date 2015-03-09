@@ -14,10 +14,9 @@ module.exports = function(server) {
         method: 'GET',
         path: '/',
         config: {
-            auth: 'simple',
             handler: function (request, reply) {
                 var indexResponse = {
-                    body: "Welcome to the Immodispo API. Please see the documentation at http://coinerd.com/docs/api"
+                    body: "Welcome to the Immodispo API. Please see the documentation at http://www.coinerd.com/docs/api"
                 };
 
                 reply(indexResponse);
