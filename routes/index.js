@@ -9,7 +9,6 @@ var Joi = require('joi'),
 
 module.exports = function(server) {
 
-
     server.route({
         method: 'GET',
         path: '/',

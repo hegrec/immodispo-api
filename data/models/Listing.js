@@ -7,7 +7,6 @@ var Base = require('./Base'),
     DomainAgency = require('./../../domain/Agency'),
     DomainTown = require('./../../domain/Town'),
     util = require('./../../lib/util');
-    imageSaver = require('./../../lib/imagesaver/LocalImageSaver'),
     env = require('./../../env');
 
 

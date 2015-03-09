@@ -15,16 +15,16 @@ module.exports = function (shipit) {
             servers: 'caketoast.com'
         },
         production: {
-            servers: 'apiuser@mealtrap.com'
+            servers: 'nodeapps@mealtrap.com'
         }
     });
 
     shipit.on('published', function() {
         shipit.remote('cd /opt/immodispo-api/current && npm install').then(function(res) {
             shipit.log(res);
-            shipit.remote('cp /home/apiuser/env.js /opt/immodispo-api/current').then(function(res) {
+            shipit.remote('cp /home/nodeapps/api-env.js /opt/immodispo-api/current/env.js').then(function(res) {
                 shipit.log(res);
-                shipit.remote('pm2 restart all').then(function(res) {
+                shipit.remote('pm2 restart api').then(function(res) {
                     shipit.log(res);
                 });
             });

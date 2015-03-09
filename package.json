@@ -17,7 +17,9 @@
     "joi": "^5.0.2",
     "lodash": "^2.4.1",
     "mysql": "^2.5.4",
-    "sequelize": "^2.0.2"
+    "pkgcloud": "^1.2.0-alpha.0",
+    "sequelize": "^2.0.2",
+    "streamifier": "^0.1.0"
   },
   "repository": {
     "type": "git",

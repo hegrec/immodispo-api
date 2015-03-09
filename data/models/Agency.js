@@ -1,7 +1,7 @@
 var Base = require('./Base'),
     _ = require('lodash'),
     util = require('./../../lib/util'),
-    imageSaver = require('./../../lib/imagesaver/LocalImageSaver'),
+    imageSaver = require('./../../lib/imagesaver/S3ImageSaver'),
     env = require('./../../env'),
     Sequelize = require('sequelize'),
     DomainAgency = require('./../../domain/Agency'),
@@ -74,12 +74,12 @@ function Agency(sequelize) {
     agency.setDataMapper(agencyDataMapper);
     agency.create = function agencyCreate(agencyData, agencyImageBuffer, cb) {
 
-        var imageFilePath = env.AGENCY_DIRECTORY + agencyData.image,
+        var imageFile = agencyData.image,
             imageData;
 
         if (agencyImageBuffer) {
             imageData = new Buffer(agencyImageBuffer, 'base64');
-            imageSaver.saveImage(imageData, imageFilePath, function (err, saved) {
+            imageSaver.saveImage(imageData, imageFile, function (err, saved) {
 
                 if (err) {
                     throw err;
