@@ -1,7 +1,7 @@
 var Hapi = require('hapi'),
     server = new Hapi.Server(),
     env = require('./env');
-
+console.log("startin");
 server.connection({
     port: env.port,
     host: env.host,
@@ -35,23 +35,36 @@ var plugins = [
 ];
 
 
-
+console.log('reg');
 server.register(plugins, function (err) {
-
     server.auth.strategy('simple', 'basic', { validateFunc: validate });
 
     if (err) {
         console.error('Failed to load a plugin:', err);
     }
 
+    server.register(require('./v1'), {
+            routes: {
+                prefix: '/v1'
+            }
+        },
+        function(err) {
+
+        }
+    );
+
+    //backwards compatibility TODO: remove after all upgrades from legacy
     server.ext('onRequest', function(request, reply) {
+        if (request.url.path.indexOf('/v1') == -1) {
+            if (request.url.path == '/') {
+                request.setUrl('/v1');
+            } else {
+                request.setUrl('/v1' + request.url.path);
+            }
+        }
 
-
-        console.log(request.url.href, request.method);
         reply.continue();
     });
-
-    require('./routes')(server);
 
     server.start(function () {
         console.log('Server running at:', server.info.uri);

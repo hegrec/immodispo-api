@@ -19,8 +19,10 @@ exports.register = function (server, options, next) {
             }
         }
     );
-
+    console.log('gitem');
     sequelize.authenticate().complete(function(err) {
+
+        console.log('gotem');
        if (err) {
            throw new Error(err);
        } else {
