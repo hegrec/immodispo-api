@@ -63,6 +63,8 @@ server.register(plugins, function (err) {
             }
         }
 
+        console.log(request.url.path);
+
         reply.continue();
     });
 
