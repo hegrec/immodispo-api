@@ -133,6 +133,9 @@ function Base(sequelize) {
                             case 'startswith':
                                 ormFilter.where[columnName].like = value + '%';
                                 break;
+                            case '$or':
+                                ormFilter.where[columnName]['$or'] = value;
+                                break;
                         }
                     });
                 }
