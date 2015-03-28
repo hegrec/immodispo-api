@@ -126,7 +126,7 @@ module.exports = function(server) {
                     land_size: Joi.number(),
                     interior_size: Joi.number(),
                     year_built: Joi.number(),
-                    is_rental: Joi.boolean().required()
+                    is_rental: Joi.number().required()
                 }
             }
         }
