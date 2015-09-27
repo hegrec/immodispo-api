@@ -19,10 +19,8 @@ exports.register = function (server, options, next) {
             }
         }
     );
-    console.log('gitem');
+    console.log('connecting', env.mysql.host, env.mysql.port);
     sequelize.authenticate().complete(function(err) {
-
-        console.log('gotem');
        if (err) {
            throw new Error(err);
        } else {

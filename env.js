@@ -5,9 +5,9 @@ module.exports = {
     host: '0.0.0.0',
     mysql: {
         database: 'immodispo',
-        username: 'immodispo',
-        password: 'devpassword',
-        host: '127.0.0.1',
+        username: 'root',
+        password: 'admin123',
+        host: '192.168.99.100',
         port: 3306
     },
     users: {
