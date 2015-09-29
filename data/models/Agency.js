@@ -1,7 +1,7 @@
 var Base = require('./Base'),
     _ = require('lodash'),
     util = require('./../../lib/util'),
-    imageSaver = require('./../../lib/imagesaver/S3ImageSaver'),
+    imageSaver = require('./../../lib/imagesaver/LocalImageSaver'),
     env = require('./../../env'),
     Sequelize = require('sequelize'),
     DomainAgency = require('./../../domain/Agency'),
@@ -74,7 +74,7 @@ function Agency(sequelize) {
     agency.setDataMapper(agencyDataMapper);
     agency.create = function agencyCreate(agencyData, agencyImageBuffer, cb) {
 
-        var imageFile = agencyData.image,
+        var imageFile = "agencyImages/" + agencyData.image,
             imageData;
 
         if (agencyImageBuffer) {
@@ -99,22 +99,23 @@ function Agency(sequelize) {
 
                     });
 
-                    savable.save().complete(function (err, savedAgency) {
-                        if (err) throw err;
-                        var filter = {
-                            where: {
-                                id: {
-                                    "eq": savedAgency.dataValues.id
+                    savable.save().then(
+                        function (savedAgency) {
+                            var filter = {
+                                where: {
+                                    id: {
+                                        "eq": savedAgency.dataValues.id
+                                    }
                                 }
-                            }
-                        };
-                        agency.find(filter, function (err, agency) {
-                            cb(null, agency.body[0]);
-                        });
-
-
-                    });
-
+                            };
+                            agency.find(filter, function (err, agency) {
+                                cb(null, agency.body[0]);
+                            });
+                        },
+                        function(err) {
+                            throw err;
+                        }
+                    );
                 }
             });
         } else {
@@ -129,21 +130,23 @@ function Agency(sequelize) {
 
             });
 
-            savable.save().complete(function (err, savedAgency) {
-                if (err) throw err;
-                var filter = {
-                    where: {
-                        id: {
-                            "eq": savedAgency.dataValues.id
+            savable.save().then(
+                function (savedAgency) {
+                    var filter = {
+                        where: {
+                            id: {
+                                "eq": savedAgency.dataValues.id
+                            }
                         }
-                    }
-                };
-                agency.find(filter, function (err, agency) {
-                    cb(null, agency.body[0]);
-                });
-
-
-            });
+                    };
+                    agency.find(filter, function (err, agency) {
+                        cb(null, agency.body[0]);
+                    });
+                },
+                function(err) {
+                    if (err) throw err;
+                }
+            );
         }
     };
 

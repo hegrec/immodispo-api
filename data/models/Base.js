@@ -47,7 +47,7 @@ function Base(sequelize) {
         var daoIncludes = [];
         if (filters.include) {
             _.each(filters.include, function(associateModel) {
-                if (_.includes(availableIncludes, associateModel)) {
+                if (_.contains(availableIncludes, associateModel)) {
                     daoIncludes.push(sequelize.models[associateModel]);
                 }
             });

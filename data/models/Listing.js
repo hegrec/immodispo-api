@@ -235,10 +235,13 @@ function Listing(sequelize) {
             TownId: listingData.town.id
         });
 
-        savable.save().complete(function (err, savedListing) {
-            if (err) throw err;
-            cb(null, savedListing);
-        });
+        savable.save().then(function (savedListing) {
+                cb(null, savedListing);
+            },
+            function(err) {
+                throw err;
+            }
+        );
     };
 
     listing.update = function listingUpdate(id, listingData, cb) {
@@ -260,10 +263,14 @@ function Listing(sequelize) {
 
             listing.feature_score = computeFeatureScore(listing);
 
-            listing.save().complete(function (err, savedListing) {
-                if (err) throw err;
-                cb(null, savedListing);
-            });
+            listing.save().then(
+                function (savedListing) {
+                    cb(null, savedListing);
+                },
+                function(err) {
+                    throw err;
+                }
+            );
         });
     };
 

@@ -19,7 +19,7 @@
     "lodash": "^2.4.1",
     "mysql": "^2.5.4",
     "pkgcloud": "^1.2.0-alpha.0",
-    "sequelize": "^2.0.2",
+    "sequelize": "^3.9.0",
     "streamifier": "^0.1.0",
     "wreck": "^5.2.0"
   },

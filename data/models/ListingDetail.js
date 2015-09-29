@@ -38,10 +38,14 @@ function ListingDetail(sequelize) {
             ListingId: listingDetailData.listing.id
         });
 
-        savable.save().complete(function(err, savedListingDetail) {
-            if (err) throw err;
-            cb(null, savedListingDetail);
-        });
+        savable.save().then(
+            function(savedListingDetail) {
+                cb(null, savedListingDetail);
+            },
+            function(err) {
+                throw err;
+            }
+        );
     };
 
     return listingDetail;

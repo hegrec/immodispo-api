@@ -3,7 +3,7 @@ var Base = require('./Base'),
     Sequelize = require('sequelize'),
     _ = require('lodash'),
     DomainListingImage = require('./../../domain/ListingImage'),
-    imageSaver = require('./../../lib/imagesaver/S3ImageSaver'),
+    imageSaver = require('./../../lib/imagesaver/LocalImageSaver'),
     env = require('./../../env');
 
 function ListingImage(sequelize) {
@@ -17,7 +17,7 @@ function ListingImage(sequelize) {
     });
 
     ListingImageDAO.hook('afterDestroy', function(listingImage, options, fn) {
-        var imagePath = listingImage.filename;
+        var imagePath = 'listingImages/' + listingImage.filename;
         console.log('destroying ' + imagePath);
         imageSaver.deleteImage(imagePath, function(err, status) {
             fn(null, true);
@@ -46,7 +46,7 @@ function ListingImage(sequelize) {
         });
 
         var buffer = new Buffer(listingImageData.buffer, 'base64'),
-            imageFile = listingImageData.filename;
+            imageFile = 'listingImages/' + listingImageData.filename;
 
         imageSaver.saveImage(buffer, imageFile, function(err, result) {
 
@@ -54,10 +54,14 @@ function ListingImage(sequelize) {
                 return cb(err);
             }
 
-            savable.save().complete(function(err, savedListingImage) {
-                if (err) throw err;
-                cb(null, savedListingImage);
-            });
+            savable.save().then(
+                function(savedListingImage) {
+                    cb(null, savedListingImage);
+                },
+                function(err) {
+                    throw err;
+                }
+            );
         });
     };
 
