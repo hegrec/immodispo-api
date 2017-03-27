@@ -5,29 +5,25 @@
   "main": "index.js",
   "private": true,
   "scripts": {
+    "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "Proprietary",
   "dependencies": {
-    "async": "^0.9.0",
-    "execsql": "0.0.3",
-    "hapi": "^8.3.0",
-    "hapi-auth-basic": "^2.0.0",
-    "hoek": "^2.10.0",
-    "joi": "^5.0.2",
-    "lodash": "^2.4.1",
-    "mysql": "^2.5.4",
-    "pkgcloud": "^1.2.0-alpha.0",
-    "sequelize": "^3.9.0",
-    "streamifier": "^0.1.0",
-    "wreck": "^5.2.0"
+    "async": "^2.1.5",
+    "bluebird": "^3.5.0",
+    "body-parser": "^1.17.1",
+    "express": "^4.15.2",
+    "express-validator": "^3.1.2",
+    "image-type": "^3.0.0",
+    "keen-js": "^3.4.1",
+    "morgan": "^1.8.1",
+    "mysql2": "^1.2.0",
+    "sequelize": "^3.9.0"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/hegrec/immodispo-api.git"
-  },
-  "devDependencies": {
-    "shipit-deploy": "^1.1.1"
   }
 }

@@ -1,67 +1,55 @@
-var _ = require('lodash'),
-    env = require('../env'),
-    mysql = require('mysql'),
-    internals = {},
-    dataModels = {},
-    Sequelize = require('sequelize');
+var _ = require('lodash');
+var mysql = require('mysql');
+var Sequelize = require('sequelize');
+var env = require('../env');
 
-internals.authenticate = function(next) {
-    console.log('connecting', env.mysql.host, env.mysql.port);
-    var sequelize = new Sequelize(
-        env.mysql.database,
-        env.mysql.username,
-        env.mysql.password,
-        {
-            dialect: 'mysql',
-            host: env.mysql.host,
-            port: env.mysql.port,
-            logging: function(str) {
-                //console.log(str);
-            }
+function authenticate(next) {
+  console.log('connecting', env.mysql.host, env.mysql.port);
+
+  var sequelize = new Sequelize(
+    env.mysql.database,
+    env.mysql.username,
+    env.mysql.password,
+    {
+      dialect: 'mysql',
+      host: env.mysql.host,
+      port: env.mysql.port,
+      logging: function(str) {
+        //console.log(str);
+      }
+    }
+  );
+  sequelize.authenticate().then(
+    function(result) {
+      const models = {};
+
+      models.town = require("./models/Town")(sequelize);
+      models.department = require("./models/Department")(sequelize);
+      models.region = require("./models/Region")(sequelize);
+      models.agency = require("./models/agency")(sequelize);
+      models.listingImage = require("./models/listing-image")(sequelize);
+      models.listingDetail = require("./models/listing-detail")(sequelize);
+      models.listing = require("./models/Listing")(sequelize);
+
+      _.forOwn(models, function(model, ndx) {
+        if (model.initialize) {
+          model.initialize();
         }
-    );
-    sequelize.authenticate().then(
-        function(result) {
-            dataModels.town = require("./models/Town")(sequelize);
-            dataModels.department = require("./models/Department")(sequelize);
-            dataModels.region = require("./models/Region")(sequelize);
-            dataModels.agency = require("./models/Agency")(sequelize);
-            dataModels.listingImage = require("./models/ListingImage")(sequelize);
-            dataModels.listingDetail = require("./models/ListingDetail")(sequelize);
-            dataModels.listing = require("./models/Listing")(sequelize);
+      });
 
-            _.forOwn(dataModels, function(model, ndx) {
-                if (model.initialize) {
-                    model.initialize();
-                }
-            });
-
-            next();
-        },
-        function(err) {
-            console.error(err);
-            console.log("trying again in 5 seconds");
-            setTimeout(function() {
-                internals.authenticate(next);
-            }, 5000);
-        }
-    );
+      next(models);
+    },
+    function(err) {
+      console.error(err);
+      console.log("trying again in 5 seconds");
+      setTimeout(function() {
+        authenticate(next);
+      }, 5000);
+    }
+  );
 };
 
 
-exports.register = function (server, options, next) {
-    internals.authenticate(next);
-
-    server.decorate('server', 'data', function() {
-
-        return dataModels;
-    });
-
-};
-
-
-
-exports.register.attributes = {
-    name: 'datamodel',
-    version: '1.0.0'
+module.exports = function (next) {
+  authenticate(next);
 };

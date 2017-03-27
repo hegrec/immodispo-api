@@ -1,8 +1,6 @@
-var Base = require('./Base'),
-    _ = require('lodash'),
-    Sequelize = require('sequelize'),
-    DomainDepartment = require('./../../domain/Department'),
-    DomainTown = require('./../../domain/Town');
+var Base = require('./Base');
+var _ = require('lodash');
+var Sequelize = require('sequelize');
 
 function Department(sequelize) {
     var department = {};
@@ -30,16 +28,16 @@ function Department(sequelize) {
 
         },
         {
-            tableName: 'Departments'
+            tableName: 'department'
         }
     );
 
 
 
-    department.setDAO(DepartmentDAO, ['Region', 'Town']);
+
 
     department.setDataMapper(function mapDepartmentDataModel(departmentDataModel) {
-        var domainDepartment = new DomainDepartment();
+        var domainDepartment = {};
         domainDepartment.id = departmentDataModel.id;
         domainDepartment.createdAt = departmentDataModel.createdAt;
         domainDepartment.updatedAt = departmentDataModel.updatedAt;
@@ -53,7 +51,7 @@ function Department(sequelize) {
         if (departmentDataModel.Towns) {
             domainDepartment.towns = [];
             _.each(departmentDataModel.Towns, function(townModel) {
-                var town = new DomainTown();
+                var town = {};
                 town.id = townModel.dataValues.id;
                 town.name = townModel.dataValues.name;
                 town.code = townModel.dataValues.code;
@@ -71,8 +69,9 @@ function Department(sequelize) {
     });
 
     department.initialize = function() {
-        DepartmentDAO.hasMany(sequelize.models.Town);
-        DepartmentDAO.belongsTo(sequelize.models.Region);
+      department.setDAO(DepartmentDAO, ['Region', 'Town']);
+      DepartmentDAO.hasMany(sequelize.models.Town, { foreignKey: 'department_id' });
+      DepartmentDAO.belongsTo(sequelize.models.Region, { foreignKey: 'region_id', key: 'region_id' });
     };
 
     return department;

@@ -1,9 +1,12 @@
-FROM    centos:centos6
+FROM node:boron
 
-RUN curl --silent --location https://rpm.nodesource.com/setup | bash -
-RUN yum install -y nodejs
-COPY . /code
-RUN cd /code ; npm install
+# Create app directory
+RUN mkdir -p /usr/src/app
+WORKDIR /usr/src/app
+
+RUN npm install -g nodemon
+RUN npm install -g sequelize-cli
+RUN npm install
+
 EXPOSE 3001
-
-CMD ["node", "/code/index.js"]
+CMD [ "nodemon", "index" ]

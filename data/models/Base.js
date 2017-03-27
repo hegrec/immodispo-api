@@ -1,157 +1,138 @@
-var Hoek = require('hoek');
 var util = require('./../../lib/util');
 var _ = require('lodash');
+
 function Base(sequelize) {
-    var self = this;
-    var dataMapper = null;
-    var daoObject;
-    var availableIncludes = [];
+  this.availableIncludes = [];
+  this.daoObject = null;
+  this.dataMapper = null;
+  this.sequelize = sequelize;
+}
 
+Base.prototype.mapDataToModel = function(dataModel) {
+  if (_.isUndefined(this.dataMapper)) {
+    throw new Error('Data model not mapped to domain');
+  }
 
+  return this.dataMapper(dataModel);
+};
 
-    function mapDataToModel(dataModel) {
-        if (_.isUndefined(dataMapper)) {
-            throw new Error('Data model not mapped to domain');
-        }
+Base.prototype.setDataMapper = function(mappingFunction) {
+  this.dataMapper = mappingFunction;
+};
 
-        return dataMapper(dataModel);
-    }
+Base.prototype.setDAO = function(daoObj, includes = []) {
+  this.daoObject = daoObj;
+  this.availableIncludes = includes.reduce((map, associateModel) => {
+    map[associateModel] = this.sequelize.models[associateModel];
 
-    function setDataMapper(mappingFunction) {
-        dataMapper = mappingFunction;
-    }
+    return map;
+  }, {});
+};
 
-    function setDAO(daoObj, includes) {
-        daoObject = daoObj;
-        availableIncludes = includes;
-    }
-
-    /**
-     * Custom query parameter find for domain models
-     * queryParams = {
+  /**
+   * Custom query parameter find for domain models
+   * queryParams = {
      *     sort: 'fieldName' OR '-fieldName' for DESC
      *     limit: 100
      * }
-     * @param params
-     * @param cb
-     */
-    function find(params, cb) {
+   * @param params
+   */
+Base.prototype.find = function(params = {}) {
+  const filters = this.buildFilterParams(params);
 
-        if (_.isUndefined(cb)) {
-            cb = params;
-            params = {};
-        }
+  return this.daoObject.findAndCountAll(filters).then((result) => {
+    var rows = result.rows,
+      count = result.count,
+      domainModels = [];
 
-        var filters = this.buildFilterParams(params);
+    _.each(rows, (dataRow) => {
+      domainModels.push(this.mapDataToModel(dataRow.dataValues));
+    });
 
-        var daoIncludes = [];
-        if (filters.include) {
-            _.each(filters.include, function(associateModel) {
-                if (_.contains(availableIncludes, associateModel)) {
-                    daoIncludes.push(sequelize.models[associateModel]);
-                }
-            });
-        }
-
-        filters.include = daoIncludes;
+    var response = new require("./../../lib/api_response");
+    response.body = domainModels;
 
 
-        try {
-            daoObject.findAndCountAll(filters).then(function (result) {
-                var rows = result.rows,
-                    count = result.count,
-                    domainModels = [];
+    response.meta.total = count;
 
-                _.each(rows, function (dataRow) {
-                    domainModels.push(mapDataToModel(dataRow.dataValues));
-                });
+    return response;
+  });
+};
 
-                var response = new require("./../../lib/api_response");
-                response.body = domainModels;
+Base.prototype.exists = function(id) {
+  const filter = {
+    where: { id }
+  };
 
+  return this.daoObject.count(filter)
+    .then(result => result > 0);
+};
 
-                response.meta.total = count;
-                cb(null, response);
+Base.prototype.findById = function(id) {
+  return this.daoObject.findById(id);
+};
 
-            });
-        } catch (e) {
-            throw new Error(e);
-        }
+Base.prototype.buildFilterParams = function(params) {
+  var ormFilter = {};
+
+  if (_.isString(params.sort)) {
+    if (params.sort.charAt(0) == '-') {
+      params.sort = params.sort.substr(1);
+      ormFilter.order = [[params.sort,'DESC']];
+    } else {
+      ormFilter.order = [[params.sort,'ASC']];
     }
+  }
 
-    function setTableName(newTableName) {
-        tableName = newTableName;
-    }
+  if (_.isArray(params.include)) {
+    ormFilter.include = params.include;
+  }
 
-    function setSchema(modelSchema) {
-        baseSchema = Hoek.applyToDefaults(baseSchema, modelSchema);
-    }
+  if (_.isNumber(params.limit)) {
+    ormFilter.limit = Math.min(500,params.limit);
+  } else {
+    ormFilter.limit = 20;
+  }
 
-    function buildFilterParams(params) {
-        var ormFilter = {};
+  if (_.isNumber(params.start)) {
+    //subtract 1 because if they enter start 1, we don't want to offset 1
+    ormFilter.offset = params.start - 1;
+  }
 
-        if (_.isString(params.sort)) {
-            if (params.sort.charAt(0) == '-') {
-                params.sort = params.sort.substr(1);
-                ormFilter.order = [[params.sort,'DESC']];
-            } else {
-                ormFilter.order = [[params.sort,'ASC']];
-            }
-        }
+  if (params.include) {
+    ormFilter.include = params.include
+      .filter(associateModel => this.availableIncludes[associateModel])
+      .map(validModelName => this.availableIncludes[validModelName]);
+  }
 
-        if (_.isArray(params.include)) {
-            ormFilter.include = params.include;
-        }
-
-        if (_.isNumber(params.limit)) {
-            ormFilter.limit = Math.min(500,params.limit);
-        } else {
-            ormFilter.limit = 20;
-        }
-
-        if (_.isNumber(params.start)) {
-            //subtract 1 because if they enter start 1, we don't want to offset 1
-            ormFilter.offset = params.start - 1;
-        }
-
-        if (_.isObject(params.where)) {
-            ormFilter.where = {};
-            _.forOwn(params.where, function(filter, columnName) {
-                if (_.isObject(filter)) {
-                    ormFilter.where[columnName] = {};
-                        _.forOwn(filter, function (value, operation) {
-                        switch(operation) {
-                            case 'eq':
-                                ormFilter.where[columnName] = value;
-                                break;
-                            case 'gt':
-                                ormFilter.where[columnName].gt = value;
-                                break;
-                            case 'lt':
-                                ormFilter.where[columnName].lt = value;
-                                break;
-                            case 'startswith':
-                                ormFilter.where[columnName].like = value + '%';
-                                break;
-                            case '$or':
-                                ormFilter.where[columnName]['$or'] = value;
-                                break;
-                        }
-                    });
-                }
-            });
-        }
-        return ormFilter;
-    }
-
-    return {
-        find: find,
-        setTableName: setTableName,
-        setSchema: setSchema,
-        setDataMapper: setDataMapper,
-        setDAO: setDAO,
-        buildFilterParams: buildFilterParams
-    };
-}
+  if (_.isObject(params.where)) {
+    ormFilter.where = {};
+    _.forOwn(params.where, function(filter, columnName) {
+      if (_.isObject(filter)) {
+        ormFilter.where[columnName] = {};
+        _.forOwn(filter, function (value, operation) {
+          switch(operation) {
+            case 'eq':
+              ormFilter.where[columnName] = value;
+              break;
+            case 'gt':
+              ormFilter.where[columnName].gt = value;
+              break;
+            case 'lt':
+              ormFilter.where[columnName].lt = value;
+              break;
+            case 'startswith':
+              ormFilter.where[columnName].like = value + '%';
+              break;
+            case '$or':
+              ormFilter.where[columnName]['$or'] = value;
+              break;
+          }
+        });
+      }
+    });
+  }
+  return ormFilter;
+};
 
 module.exports = Base;

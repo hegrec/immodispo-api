@@ -1,7 +1,6 @@
-var Sequelize = require('sequelize'),
-    _ = require('lodash'),
-    BaseDAO = require('./Base'),
-    DomainRegion = require('./../../domain/Region');
+var Sequelize = require('sequelize');
+var _ = require('lodash');
+var BaseDAO = require('./Base');
 
 function Region(sequelize) {
     var region = {};
@@ -26,20 +25,20 @@ function Region(sequelize) {
 
         },
         {
-            tableName: 'Regions'
+            tableName: 'region'
         }
     );
 
 
 
     region.initialize = function() {
-        RegionDAO.hasMany(sequelize.models.Department);
-        RegionDAO.hasMany(sequelize.models.Town);
+        RegionDAO.hasMany(sequelize.models.Department, { foreignKey: 'region_id'});
+        RegionDAO.hasMany(sequelize.models.Town, { foreignKey: 'region_id'});
     };
 
     region.setDAO(RegionDAO);
     region.setDataMapper(function mapToDomain(regionDataModel) {
-        var domainRegion = new DomainRegion();
+        var domainRegion = {};
         domainRegion.id = regionDataModel.id;
         domainRegion.createdAt = regionDataModel.createdAt;
         domainRegion.updatedAt = regionDataModel.updatedAt;

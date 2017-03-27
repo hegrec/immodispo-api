@@ -7,7 +7,7 @@ module.exports = {
         database: 'immodispo',
         username: 'root',
         password: 'admin123',
-        host: '192.168.99.100',
+        host: 'mysql',
         port: 3306
     },
     users: {

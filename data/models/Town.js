@@ -1,8 +1,5 @@
-var Base = require('./Base'),
-    Sequelize = require('sequelize'),
-    DomainDepartment = require('./../../domain/Department'),
-    DomainRegion = require('./../../domain/Region'),
-    DomainTown = require('./../../domain/Town');
+var Base = require('./Base');
+var Sequelize = require('sequelize');
 
 
 function Town(sequelize) {
@@ -33,19 +30,19 @@ function Town(sequelize) {
             }
         },
         {
-            tableName: 'Towns'
+            tableName: 'town'
         }
     );
 
     town.initialize = function() {
-        TownDAO.belongsTo(sequelize.models.Department);
-        TownDAO.belongsTo(sequelize.models.Region);
+        TownDAO.belongsTo(sequelize.models.Department, { key: 'department_id', foreignKey: 'department_id' });
+        TownDAO.belongsTo(sequelize.models.Region,  { key: 'region_id', foreignKey: 'region_id' });
     };
 
     town.setDAO(TownDAO, ['Department', 'Region']);
 
     town.setDataMapper(function mapTownDataModel(townDataModel) {
-        var domainTown = new DomainTown();
+        var domainTown = {};
 
         domainTown.id = townDataModel.id;
         domainTown.createdAt = townDataModel.createdAt;
@@ -59,7 +56,7 @@ function Town(sequelize) {
         domainTown.longitude = townDataModel.longitude;
 
         if (townDataModel.Department) {
-            var domainDepartment = new DomainDepartment();
+            var domainDepartment = {};
             domainDepartment.id = townDataModel.Department.dataValues.id;
             domainDepartment.createdAt = townDataModel.Department.dataValues.createdAt;
             domainDepartment.updatedAt = townDataModel.Department.dataValues.updatedAt;
@@ -72,7 +69,7 @@ function Town(sequelize) {
             domainTown.department = domainDepartment;
         }
         if (townDataModel.Region) {
-            var domainRegion = new DomainRegion();
+            var domainRegion = {};
             domainRegion.id = townDataModel.Region.dataValues.id;
             domainRegion.createdAt = townDataModel.Region.dataValues.createdAt;
             domainRegion.updatedAt = townDataModel.Region.dataValues.updatedAt;

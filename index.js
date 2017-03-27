@@ -1,76 +1,44 @@
-var Hapi = require('hapi'),
-    server = new Hapi.Server(),
-    env = require('./env');
-console.log("startin");
-server.connection({
-    port: env.port,
-    host: env.host,
-    routes: {
-        payload: {
-            maxBytes: 1024*1024*1024*1024
-        }
-    }
+const express = require('express');
+const bodyParser = require('body-parser');
+const expressValidator = require('express-validator');
+const morgan = require('morgan');
+const env = require('./env');
+const agency = require('./routes/agency');
+const department = require('./routes/department');
+const listing = require('./routes/listing');
+const region = require('./routes/region');
+const town = require('./routes/town');
+const native = require('./routes/native');
+const databaseModels = require('./data');
+
+const app = express();
+const v1Router = express.Router();
+
+app.use(bodyParser.json()); // for parsing application/json
+app.use(bodyParser.raw({limit: '5mb'}));
+app.use(expressValidator());
+app.use(morgan('tiny'));
+
+app.get('/', (req, res) => {
+  res.send('Hello World');
 });
 
-var validate = function (username, password, callback) {
-
-    var user = env.users[username],
-        isValid = false;
-    if (!user) {
-        return callback(null, false);
-    }
-
-
-    if (password === user.password) {
-        isValid = true;
-    }
-
-    callback(null, isValid, { id: user.id, name: user.name });
-
-};
-
-var plugins = [
-    require('hapi-auth-basic'),
-    require('./data')
-];
-
-
-console.log('reg');
-server.register(plugins, function (err) {
-    server.auth.strategy('simple', 'basic', { validateFunc: validate });
-
-    if (err) {
-        console.error('Failed to load a plugin:', err);
-    }
-
-    server.register(require('./v1'), {
-            routes: {
-                prefix: '/v1'
-            }
-        },
-        function(err) {
-
-        }
-    );
-
-    //backwards compatibility TODO: remove after all upgrades from legacy
-    server.ext('onRequest', function(request, reply) {
-        if (request.url.path.indexOf('/v1') == -1) {
-            if (request.url.path == '/') {
-                request.setUrl('/v1');
-            } else {
-                request.setUrl('/v1' + request.url.path);
-            }
-        }
-
-        console.log(request.url.path);
-
-        reply.continue();
-    });
-
-    server.start(function () {
-        console.log('Server running at:', server.info.uri);
-    });
+v1Router.get('/', (req, res) => {
+  res.send({
+    time: new Date()
+  });
 });
 
+app.use('/v1', v1Router);
 
+
+databaseModels((models) => {
+  agency(v1Router, models);
+  department(v1Router, models);
+  listing(v1Router, models);
+  native(v1Router, models);
+  region(v1Router, models);
+  town(v1Router, models);
+
+  app.listen(env.port);
+});

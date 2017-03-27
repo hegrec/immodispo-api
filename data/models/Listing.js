@@ -1,13 +1,9 @@
-var Base = require('./Base'),
-    async = require('async'),
-    Sequelize = require('sequelize'),
-    _ = require('lodash'),
-    DomainListing = require('./../../domain/Listing'),
-    DomainListingDetail = require('./../../domain/ListingDetail'),
-    DomainAgency = require('./../../domain/Agency'),
-    DomainTown = require('./../../domain/Town'),
-    util = require('./../../lib/util');
-    env = require('./../../env');
+var Base = require('./Base');
+var async = require('async');
+var Sequelize = require('sequelize');
+var _ = require('lodash');
+var util = require('./../../lib/util');
+var env = require('./../../env');
 
 
 
@@ -18,11 +14,11 @@ var computeFeatureScore = function computeFeatureScore(listing) {
         score += 1;
     }
 
-    if (listing.Agency.email) {
+    if (listing.agency.email) {
         score += 5;
     }
 
-    if (listing.Agency.telephone) {
+    if (listing.agency.telephone) {
         score += 5;
     }
 
@@ -42,8 +38,8 @@ var computeFeatureScore = function computeFeatureScore(listing) {
         }
     }
 
-    score += Math.floor(listing.ListingImages.length / 2);
-    score += Math.floor(listing.ListingDetails.length / 2);
+    score += Math.floor(listing.images.length / 2);
+    score += Math.floor(listing.details.length / 2);
 
     return score;
 };
@@ -114,26 +110,28 @@ function Listing(sequelize) {
             }
         },
         {
-            tableName: 'Listings'
+            tableName: 'listing'
         }
     );
 
 
 
     listing.initialize = function() {
-        ListingDAO.belongsTo(sequelize.models.Agency);
-        ListingDAO.belongsTo(sequelize.models.Town);
-        ListingDAO.hasMany(sequelize.models.ListingImage, {
+        ListingDAO.belongsTo(sequelize.models.agency, { key: 'agency_id', foreignKey: 'agency_id'});
+        ListingDAO.belongsTo(sequelize.models.Town, { key: 'town_id', foreignKey: 'town_id'});
+        ListingDAO.hasMany(sequelize.models.listing_image, {
+            key: 'listing_id',
+            foreignKey: 'listing_id',
             onDelete: 'cascade',
             hooks: true
         });
-        ListingDAO.hasMany(sequelize.models.ListingDetail);
+        ListingDAO.hasMany(sequelize.models.listing_detail, { key: 'listing_id', foreignKey: 'listing_id'});
     };
 
-    listing.setDAO(ListingDAO, ['Agency', 'Town', 'ListingImage', 'ListingDetail']);
+    listing.setDAO(ListingDAO, ['agency', 'Town', 'listing_image', 'listing_detail']);
 
     var listingDataMapper = function mapListingDataModel(listingDataModel) {
-        var domainListing = new DomainListing(),
+        var domainListing = {};
             images = [];
 
         domainListing.id = listingDataModel.id;
@@ -157,7 +155,7 @@ function Listing(sequelize) {
         domainListing.views = listingDataModel.views;
 
         if (typeof listingDataModel.Town !== 'undefined') {
-            domainListing.town = new DomainTown();
+            domainListing.town = {};
             domainListing.town.id = listingDataModel.Town.dataValues.id;
             domainListing.town.name = listingDataModel.Town.dataValues.name;
             domainListing.town.code = listingDataModel.Town.dataValues.code;
@@ -167,26 +165,26 @@ function Listing(sequelize) {
             domainListing.town.latitude = listingDataModel.Town.dataValues.latitude;
             domainListing.town.longitude = listingDataModel.Town.dataValues.longitude;
         } else {
-            domainListing.town = listingDataModel.TownId;
+            domainListing.town = listingDataModel.town_id;
         }
 
-        if (typeof listingDataModel.Agency !== 'undefined') {
-            domainListing.agency = new DomainAgency();
-            domainListing.agency.id = listingDataModel.Agency.dataValues.id;
-            domainListing.agency.name = listingDataModel.Agency.dataValues.name;
-            domainListing.agency.image = "/agencyImages/" + listingDataModel.Agency.dataValues.image;
-            domainListing.agency.address_1 = listingDataModel.Agency.dataValues.address_1;
-            domainListing.agency.address_2 = listingDataModel.Agency.dataValues.address_2;
-            domainListing.agency.telephone = listingDataModel.Agency.dataValues.telephone;
-            domainListing.agency.email = listingDataModel.Agency.dataValues.email;
-            domainListing.agency.website = listingDataModel.Agency.dataValues.website;
+        if (typeof listingDataModel.agency !== 'undefined') {
+            domainListing.agency = {};
+            domainListing.agency.id = listingDataModel.agency.dataValues.id;
+            domainListing.agency.name = listingDataModel.agency.dataValues.name;
+            domainListing.agency.image = "/agencyImages/" + listingDataModel.agency.dataValues.image;
+            domainListing.agency.address_1 = listingDataModel.agency.dataValues.address_1;
+            domainListing.agency.address_2 = listingDataModel.agency.dataValues.address_2;
+            domainListing.agency.telephone = listingDataModel.agency.dataValues.telephone;
+            domainListing.agency.email = listingDataModel.agency.dataValues.email;
+            domainListing.agency.website = listingDataModel.agency.dataValues.website;
         } else {
             domainListing.agency = listingDataModel.AgencyId;
         }
 
 
-        if (_.isArray(listingDataModel.ListingImages)) {
-            _.each(listingDataModel.ListingImages, function (image) {
+        if (_.isArray(listingDataModel.listing_images)) {
+            _.each(listingDataModel.listing_images, function (image) {
                 var domainImage = {
                     standard_url: '/listingImages/' + image.dataValues.filename
                 };
@@ -213,7 +211,7 @@ function Listing(sequelize) {
 
     listing.setDataMapper(listingDataMapper);
 
-    listing.create = function listingCreate(listingData, cb) {
+    listing.create = function listingCreate(listingData) {
         var savable = ListingDAO.build({
             price: listingData.price,
             description: listingData.description,
@@ -231,17 +229,11 @@ function Listing(sequelize) {
             is_rental: listingData.is_rental,
             feature_score: listingData.feature_score,
             views: listingData.views,
-            AgencyId: listingData.agency.id,
-            TownId: listingData.town.id
+            agency_id: listingData.agency_id,
+            town_id: listingData.town_id
         });
 
-        savable.save().then(function (savedListing) {
-                cb(null, savedListing);
-            },
-            function(err) {
-                throw err;
-            }
-        );
+        return savable.save();
     };
 
     listing.update = function listingUpdate(id, listingData, cb) {
@@ -251,7 +243,7 @@ function Listing(sequelize) {
             where: {
                 id: id
             },
-            include: [sequelize.models.ListingImage, sequelize.models.ListingDetail, sequelize.models.Agency]
+            include: [sequelize.models.listing_image, sequelize.models.listing_detail, sequelize.models.agency]
         }).then(function(listing) {
 
             _.forOwn(listingData, function(value, key) {
