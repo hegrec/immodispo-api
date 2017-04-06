@@ -4,9 +4,9 @@ FROM node:boron
 RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 
-RUN npm install -g nodemon
+COPY . /usr/src/app
 RUN npm install -g sequelize-cli
 RUN npm install
 
 EXPOSE 3001
-CMD [ "nodemon", "index" ]
+CMD [ "node", "index.js" ]

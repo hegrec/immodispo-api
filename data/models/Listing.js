@@ -132,7 +132,7 @@ function Listing(sequelize) {
 
     var listingDataMapper = function mapListingDataModel(listingDataModel) {
         var domainListing = {};
-            images = [];
+        var images = [];
 
         domainListing.id = listingDataModel.id;
         domainListing.createdAt = listingDataModel.createdAt;
@@ -186,7 +186,7 @@ function Listing(sequelize) {
         if (_.isArray(listingDataModel.listing_images)) {
             _.each(listingDataModel.listing_images, function (image) {
                 var domainImage = {
-                    standard_url: '/listingImages/' + image.dataValues.filename
+                    standard_url: 'http://192.168.0.103:3001/listingImages/' + image.dataValues.filename
                 };
                 images.push(domainImage);
             });
@@ -195,8 +195,8 @@ function Listing(sequelize) {
         domainListing.images = images;
 
         var details = [];
-        if (_.isArray(listingDataModel.ListingDetails)) {
-            _.each(listingDataModel.ListingDetails, function (detail) {
+        if (_.isArray(listingDataModel.listing_details)) {
+            _.each(listingDataModel.listing_details, function (detail) {
                 details.push({
                     key: detail.dataValues.key,
                     value: detail.dataValues.value

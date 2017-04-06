@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const expressValidator = require('express-validator');
 const morgan = require('morgan');
+const path = require('path');
 const env = require('./env');
 const agency = require('./routes/agency');
 const department = require('./routes/department');
@@ -21,6 +22,12 @@ app.use(morgan('tiny'));
 
 app.get('/', (req, res) => {
   res.send('Hello World');
+});
+
+app.get('/listingImages/:fileName', (req, res) => {
+  const fileName = req.params.fileName;
+
+  res.sendFile(path.join(__dirname, `content/${fileName}`));
 });
 
 v1Router.get('/', (req, res) => {
