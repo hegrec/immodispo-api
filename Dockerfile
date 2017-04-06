@@ -8,5 +8,5 @@ COPY . /usr/src/app
 RUN npm install -g sequelize-cli
 RUN npm install
 
-EXPOSE 3001
+EXPOSE 80
 CMD [ "node", "index.js" ]
