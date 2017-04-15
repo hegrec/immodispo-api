@@ -23,13 +23,13 @@ function authenticate(next) {
     function(result) {
       const models = {};
 
-      models.town = require("./models2/town")(sequelize);
-      models.department = require("./models2/department")(sequelize);
-      models.region = require("./models2/region")(sequelize);
-      models.agency = require("./models2/agency")(sequelize);
-      models.listingImage = require("./models2/listing-image")(sequelize);
-      models.listingDetail = require("./models2/listing-detail")(sequelize);
-      models.listing = require("./models2/listing")(sequelize);
+      models.town = require("./models/town")(sequelize);
+      models.department = require("./models/department")(sequelize);
+      models.region = require("./models/region")(sequelize);
+      models.agency = require("./models/agency")(sequelize);
+      models.listingImage = require("./models/listing-image")(sequelize);
+      models.listingDetail = require("./models/listing-detail")(sequelize);
+      models.listing = require("./models/listing")(sequelize);
 
       _.forOwn(models, function(model, ndx) {
         if (model.initialize) {
