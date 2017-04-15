@@ -20,6 +20,8 @@ app.use(bodyParser.raw({limit: '5mb'}));
 app.use(expressValidator());
 app.use(morgan('tiny'));
 
+app.disable('x-powered-by');
+
 app.get('/', (req, res) => {
   res.send('Hello World');
 });
