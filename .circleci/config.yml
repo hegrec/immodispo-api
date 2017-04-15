@@ -6,10 +6,9 @@ jobs:
       - image: node:boron
     steps:
       - checkout
-      - run: echo "hello world"
       - setup_remote_docker:
-        reusable: true
-        exclusive: true
+          reusable: true
+          exclusive: true
       - run:
         name: Build Docker Image
         command: |
