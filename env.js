@@ -1,33 +1,13 @@
 module.exports = {
     LISTING_DIRECTORY: '/opt/immodispo/listingImages/',
     AGENCY_DIRECTORY: '/opt/immodispo/agencyImages/',
-    port: 3001,
+    port: process.env.PORT || 3001,
     host: '0.0.0.0',
     mysql: {
-        database: 'immodispo',
-        username: 'root',
-        password: 'admin123',
-        host: 'mysql',
-        port: 3306
-    },
-    users: {
-        web: {
-            username: 'web',
-            password: 'web',
-            name: 'Web Application',
-            id: 1
-        },
-        crawl: {
-            username: 'crawl',
-            password: 'crawl',
-            name: 'Crawl Application',
-            id: 1
-        },
-        admin: {
-            username: 'admin',
-            password: 'admin',
-            name: 'Crawl Application',
-            id: 1
-        }
+        database: process.env.DATABASE_NAME,
+        username: process.env.DATABASE_USER,
+        password: process.env.DATABASE_PASSWORD,
+        host: process.env.DATABASE_HOST,
+        port: process.env.DATABASE_PORT
     }
 };
