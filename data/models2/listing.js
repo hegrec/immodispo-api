@@ -1,4 +1,4 @@
-var Base = require('./Base');
+var Base = require('./base');
 var async = require('async');
 var Sequelize = require('sequelize');
 var _ = require('lodash');

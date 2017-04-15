@@ -1,6 +1,6 @@
 var _ = require('lodash');
 var Sequelize = require('sequelize');
-var Base = require('./Base');
+var Base = require('./base');
 const imageDetector = require('./../../lib/imagesaver/detector');
 var imageSaver = require('./../../lib/imagesaver/LocalImageSaver');
 var env = require('./../../env');

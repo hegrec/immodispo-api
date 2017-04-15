@@ -1,6 +1,6 @@
 var mmm = require('mmmagic');
 var Sequelize = require('sequelize');
-var Base = require('./Base');
+var Base = require('./base');
 var util = require('./../../lib/util');
 var imageSaver = require('./../../lib/imagesaver/LocalImageSaver');
 var env = require('./../../env');

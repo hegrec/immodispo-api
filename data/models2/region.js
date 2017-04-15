@@ -1,6 +1,6 @@
 var Sequelize = require('sequelize');
 var _ = require('lodash');
-var BaseDAO = require('./Base');
+var BaseDAO = require('./base');
 
 function Region(sequelize) {
     var region = {};
