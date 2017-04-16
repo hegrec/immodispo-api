@@ -22,4 +22,4 @@ jobs:
           command: |
             docker build -t hegrec/immown-api:latest .
             docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
-            docker push hegrec/immown-api:$TAG
+            docker push hegrec/immown-api:latest
