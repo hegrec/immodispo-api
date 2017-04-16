@@ -12,6 +12,11 @@ const town = require('./routes/town');
 const native = require('./routes/native');
 const databaseModels = require('./data');
 
+if (!process.env.MASTER_API_KEY) {
+  console.error('MASTER_API_KEY was not set, exiting...');
+  process.exit(1);
+}
+
 const app = express();
 const v1Router = express.Router();
 
