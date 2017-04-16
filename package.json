@@ -11,6 +11,7 @@
   "author": "",
   "license": "Proprietary",
   "dependencies": {
+    "@google-cloud/storage": "^1.1.0",
     "async": "^2.1.5",
     "bluebird": "^3.5.0",
     "body-parser": "^1.17.1",
@@ -18,10 +19,12 @@
     "express-validator": "^3.1.2",
     "image-type": "^3.0.0",
     "keen-js": "^3.4.1",
+    "mime-types": "^2.1.15",
     "mmmagic": "^0.4.5",
     "morgan": "^1.8.1",
     "mysql": "^2.13.0",
-    "sequelize": "^3.9.0"
+    "sequelize": "^3.9.0",
+    "streamifier": "^0.1.1"
   },
   "repository": {
     "type": "git",
