@@ -7,7 +7,7 @@ WORKDIR /usr/src/app
 COPY . /usr/src/app
 
 RUN yarn global add node-gyp
-RUN npm global add sequelize-cli
+RUN yarn global add sequelize-cli
 RUN yarn install
 
 EXPOSE 80
