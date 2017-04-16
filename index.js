@@ -38,6 +38,16 @@ v1Router.get('/', (req, res) => {
   });
 });
 
+v1Router.use((req, res, next) => {
+  console.log('boom!');
+  console.log(req.headers, process.env.MASTER_API_KEY);
+  if (req.headers.master_api_key !== process.env.MASTER_API_KEY) {
+    return res.status(401).send('I\'ve got the same combination on my luggage!');
+  }
+
+  next();
+});
+
 app.use('/v1', v1Router);
 
 
