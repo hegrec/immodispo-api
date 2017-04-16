@@ -5,8 +5,9 @@ RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 
 COPY . /usr/src/app
+RUN npm install -g yarn
 RUN npm install -g sequelize-cli
-RUN npm install
+RUN yarn install
 
 EXPOSE 80
 CMD [ "node", "index.js" ]
