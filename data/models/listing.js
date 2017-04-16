@@ -186,7 +186,7 @@ function Listing(sequelize) {
         if (_.isArray(listingDataModel.listing_images)) {
             _.each(listingDataModel.listing_images, function (image) {
                 var domainImage = {
-                    standard_url: 'http://storage.googleapis.com/immodispo-images/' + image.dataValues.filename
+                    standard_url: 'https://storage.googleapis.com/immodispo-images/' + image.dataValues.filename
                 };
                 images.push(domainImage);
             });
