@@ -2,7 +2,7 @@ var util = require('../lib/util');
 
 module.exports = function(app, models) {
   app.get('/icons', (req, res) => {
-    const { t, ln, ls, le, lw } = req.query;
+    const { t, ln, ls, le, lw, minPrice, maxPrice } = req.query;
 
     const filter = {
       where: {
@@ -15,6 +15,15 @@ module.exports = function(app, models) {
 
     if (t) {
       filter.where.town_id = { eq: t };
+    }
+
+    if (minPrice) {
+      filter.where.price = { gte: minPrice }
+    }
+
+    if (maxPrice) {
+      filter.where.price = filter.where.price || {};
+      filter.where.price.lte = maxPrice;
     }
 
     models.listing.find(filter)

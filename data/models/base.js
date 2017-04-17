@@ -121,6 +121,12 @@ Base.prototype.buildFilterParams = function(params) {
             case 'lt':
               ormFilter.where[columnName].lt = value;
               break;
+            case 'gte':
+              ormFilter.where[columnName].gte = value;
+              break;
+            case 'lte':
+              ormFilter.where[columnName].lte = value;
+              break;
             case 'startswith':
               ormFilter.where[columnName].like = value + '%';
               break;
